@@ -230,6 +230,40 @@ function renderStats(){
   document.getElementById("s-elev").textContent=Math.round(allActivities.reduce((s,a)=>s+(a.total_elevation_gain||0),0));
 }
 
+const TYPE_CONFIG = {
+  Run:           { icon:"🏃", label:"Runs",     showPace:true,  showSpeed:false },
+  Walk:          { icon:"🚶", label:"Walks",    showPace:true,  showSpeed:false },
+  Ride:          { icon:"🚴", label:"Rides",    showPace:false, showSpeed:true  },
+  VirtualRide:   { icon:"🚴", label:"V.Rides",  showPace:false, showSpeed:true  },
+  Swim:          { icon:"🏊", label:"Swims",    showPace:true,  showSpeed:false },
+  Hike:          { icon:"🥾", label:"Hikes",    showPace:true,  showSpeed:false },
+  WeightTraining:{ icon:"🏋️", label:"Weights",  showPace:false, showSpeed:false },
+  Workout:       { icon:"💪", label:"Workouts", showPace:false, showSpeed:false },
+  Yoga:          { icon:"🧘", label:"Yoga",     showPace:false, showSpeed:false },
+  Kayaking:      { icon:"🚣", label:"Kayaking", showPace:false, showSpeed:true  },
+  Rowing:        { icon:"🚣", label:"Rowing",   showPace:false, showSpeed:true  },
+};
+function getTypeConfig(type){ return TYPE_CONFIG[type]||{icon:"⚡",label:type,showPace:true,showSpeed:false}; }
+
+function buildTabs(){
+  const seen=new Set(), types=[];
+  for(const a of allActivities){ if(!seen.has(a.type)){ seen.add(a.type); types.push(a.type); } }
+  const container=document.getElementById("tabs-container");
+  container.innerHTML=`<button class="tab active" onclick="filterActivities('all',this)">All (${allActivities.length})</button>`;
+  types.forEach(type=>{
+    const count=allActivities.filter(a=>a.type===type).length;
+    const cfg=getTypeConfig(type);
+    container.innerHTML+=`<button class="tab" onclick="filterActivities('${type}',this)">${cfg.icon} ${cfg.label} (${count})</button>`;
+  });
+}
+
+function activityBadge(a){
+  const cfg=getTypeConfig(a.type);
+  if(cfg.showSpeed) return `<span class="pace-badge">${speed(a.average_speed)}</span>`;
+  if(cfg.showPace&&a.distance>0) return `<span class="pace-badge">${pace(a.distance,a.moving_time)}</span>`;
+  return "";
+}
+
 function filterActivities(type,btn){
   currentFilter=type;shownCount=8;
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
@@ -244,7 +278,7 @@ function renderActivities(){
     <div class="act-card fade-in" onclick="openActivity(${a.id},'${a.name.replace(/'/g,"\\'")}','${a.type}','${a.start_date_local}')">
       <div class="act-icon">${typeIcon(a.type)}</div>
       <div style="min-width:0">
-        <div class="act-name">${a.name}${a.type==="Run"?`<span class="pace-badge">${pace(a.distance,a.moving_time)}</span>`:""}</div>
+        <div class="act-name">${a.name}${activityBadge(a)}</div>
         <div class="act-meta">${fmtDate(a.start_date_local)} · ${fmtTime(a.start_date_local)}</div>
       </div>
       <div class="act-stats">
