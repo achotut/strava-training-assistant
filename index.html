@@ -170,7 +170,7 @@ const CONFIG = {
   clientId:     "243895",
   clientSecret: "3e4a1881ef4a39ec1ccaf87b81f21640aea30e2b",
   refreshToken: "29a7fe82e4d5c2dd1fc3bc44b28b31c64053806a",
-  groqKey:      "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",
+  chatWorker:   "https://strava-chat.achotut.workers.dev",
 };
 
 let accessToken="", allActivities=[], athlete={}, shownCount=8, currentFilter="all", chatHistory=[];
@@ -388,18 +388,17 @@ async function sendMsg(text){
   thinking.innerHTML=`<div class="avatar">🤖</div><div class="bubble"><span class="spinner"></span>Analyzing your training...</div>`;
   msgs.appendChild(thinking);msgs.scrollTop=msgs.scrollHeight;
   try{
-    const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+    const res=await fetch(CONFIG.chatWorker,{
       method:"POST",
-      headers:{"Content-Type":"application/json","Authorization":`Bearer ${CONFIG.groqKey}`},
-      body:JSON.stringify({model:"llama-3.1-8b-instant",max_tokens:1000,temperature:0.7,
-        messages:[{role:"system",content:buildSystemPrompt()},...chatHistory]})
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({system:buildSystemPrompt(),messages:chatHistory})
     });
     const data=await res.json();
     document.getElementById("thinking")?.remove();
     if(data.error){
       renderMsg("assistant","Error: "+(data.error.message||JSON.stringify(data.error)));
     }else{
-      const reply=data.choices?.[0]?.message?.content||"Sorry, couldn't get a response.";
+      const reply=data.reply||"Sorry, couldn't get a response.";
       chatHistory.push({role:"assistant",content:reply});
       renderMsg("assistant",reply);
     }
