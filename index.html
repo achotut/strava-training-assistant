@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Abhishek's Training Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--orange:#fc4c02;--orange-dim:#c93d01;--bg:#0a0a0a;--card:#141414;--card2:#1c1c1c;--border:#2a2a2a;--text:#f0ede8;--muted:#888}
+    body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh}
+    .app{max-width:940px;margin:0 auto;padding:24px 16px 60px}
+    .header{display:flex;align-items:center;gap:14px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+    .logo{width:44px;height:44px;background:var(--orange);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:white;flex-shrink:0}
+    .header-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;letter-spacing:1px}
+    .header-sub{font-size:12px;color:var(--muted);margin-top:2px}
+    .connected-badge{margin-left:auto;background:#1a2a1a;color:#5cb85c;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;white-space:nowrap}
+    .refresh-btn{background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:6px 12px;font-size:12px;cursor:pointer;font-family:'Barlow',sans-serif;transition:all 0.15s}
+    .refresh-btn:hover{border-color:var(--orange);color:var(--orange)}
+    .loading-screen{text-align:center;padding:60px 20px;color:var(--muted)}
+    .spinner-lg{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px}
+    .error-box{background:#1a0a0a;border:1px solid #5a1a1a;border-radius:12px;padding:20px;color:#e07070;text-align:center;margin:40px 0}
+    .error-box h3{margin-bottom:8px;font-family:'Barlow Condensed',sans-serif;font-size:20px}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+    @media(max-width:560px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+    .stat-val{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;color:var(--orange)}
+    .stat-label{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.6px}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+    .section-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:0.5px}
+    .tabs{display:flex;gap:8px}
+    .tab{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'Barlow',sans-serif;transition:all 0.15s}
+    .tab.active{border-color:var(--orange);color:var(--orange);background:#1a0a00}
+    .activity-list{display:flex;flex-direction:column;gap:9px;margin-bottom:28px}
+    .act-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 18px;display:flex;align-items:center;gap:14px;transition:border-color 0.15s;cursor:pointer}
+    .act-card:hover{border-color:var(--orange)}
+    .act-icon{font-size:22px;width:32px;text-align:center;flex-shrink:0}
+    .act-name{font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .act-meta{font-size:11px;color:var(--muted);margin-top:2px}
+    .pace-badge{background:#1a1a0a;border:1px solid #3a3a00;border-radius:6px;padding:2px 7px;font-size:10px;color:#c8b400;font-weight:600}
+    .act-stats{margin-left:auto;display:flex;gap:16px;text-align:right;flex-shrink:0}
+    .asv{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600}
+    .asl{font-size:9px;color:var(--muted);text-transform:uppercase}
+    .show-more{background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Barlow',sans-serif;width:100%;transition:all 0.15s;margin-bottom:28px}
+    .show-more:hover{border-color:var(--orange);color:var(--orange)}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;backdrop-filter:blur(4px)}
+    .modal{background:var(--card);border:1px solid var(--border);border-radius:20px;width:100%;max-width:720px;margin:auto;overflow:hidden;animation:slideUp 0.3s ease}
+    @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+    .modal-header{background:var(--card2);padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+    .modal-icon{font-size:28px}
+    .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700}
+    .modal-date{font-size:12px;color:var(--muted);margin-top:2px}
+    .modal-close{margin-left:auto;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:6px 12px;font-size:18px;cursor:pointer;line-height:1}
+    .modal-close:hover{border-color:#e07070;color:#e07070}
+    .modal-body{padding:24px}
+    .modal-loading{text-align:center;padding:40px;color:var(--muted)}
+    .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+    @media(max-width:500px){.detail-grid{grid-template-columns:repeat(2,1fr)}}
+    .detail-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+    .detail-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:var(--orange)}
+    .detail-label{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px}
+    .splits-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;margin-bottom:12px;letter-spacing:0.5px}
+    .splits-table{width:100%;border-collapse:collapse;font-size:13px}
+    .splits-table th{text-align:left;padding:8px 10px;color:var(--muted);font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600}
+    .splits-table td{padding:9px 10px;border-bottom:1px solid #1e1e1e}
+    .splits-table tr:last-child td{border-bottom:none}
+    .splits-table tr:hover td{background:#1a1a1a}
+    .split-num{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--orange)}
+    .pace-bar-wrap{display:flex;align-items:center;gap:8px}
+    .pace-bar{height:6px;background:var(--orange);border-radius:3px;min-width:4px}
+    .efforts-section{margin-top:20px}
+    .effort-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #1e1e1e;font-size:13px}
+    .effort-item:last-child{border-bottom:none}
+    .effort-name{color:var(--muted)}
+    .effort-time{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700}
+    .ai-box{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+    .ai-hdr{background:var(--card2);padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+    .ai-dot{width:8px;height:8px;background:var(--orange);border-radius:50%;animation:pulse 1.5s infinite;flex-shrink:0}
+    .ai-hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.5px}
+    .ai-msgs{padding:18px 20px;min-height:200px;max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+    .msg{display:flex;gap:10px;align-items:flex-start}
+    .msg-user{flex-direction:row-reverse}
+    .bubble{max-width:80%;background:var(--card2);border-radius:12px;padding:10px 14px;font-size:14px;line-height:1.65;border:1px solid var(--border);white-space:pre-wrap}
+    .msg-user .bubble{background:var(--orange);border-color:var(--orange);color:white}
+    .avatar{width:28px;height:28px;border-radius:50%;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+    .quick-row{display:flex;gap:7px;flex-wrap:wrap;padding:4px 20px 14px}
+    .qbtn{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'Barlow',sans-serif;transition:all 0.15s}
+    .qbtn:hover{border-color:var(--orange);color:var(--orange)}
+    .input-row{display:flex;gap:10px;padding:12px 20px;border-top:1px solid var(--border);background:var(--card2)}
+    .ai-inp{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;outline:none}
+    .ai-inp:focus{border-color:var(--orange)}
+    .ai-inp::placeholder{color:var(--muted)}
+    .send-btn{background:var(--orange);color:white;border:none;border-radius:8px;padding:9px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif}
+    .send-btn:disabled{opacity:0.45;cursor:not-allowed}
+    .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:7px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .fade-in{animation:fadeIn 0.3s ease forwards}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">S</div>
+    <div>
+      <div class="header-title">TRAINING ASSISTANT</div>
+      <div class="header-sub" id="header-sub">Loading your Strava data...</div>
+    </div>
+    <button class="refresh-btn" onclick="loadData()" id="refresh-btn" style="display:none">↻ Refresh</button>
+    <div class="connected-badge" id="conn-badge" style="display:none">✓ Live</div>
+  </div>
+  <div id="loading-screen" class="loading-screen">
+    <div class="spinner-lg"></div>
+    <p>Connecting to Strava...</p>
+  </div>
+  <div id="error-screen" class="error-box" style="display:none">
+    <h3>⚠️ Connection Error</h3>
+    <p id="error-msg"></p>
+    <button class="refresh-btn" onclick="loadData()" style="margin-top:12px;display:inline-block">Try Again</button>
+  </div>
+  <div id="main-content" style="display:none">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="s-dist">--</div><div class="stat-label">Total KM</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-runs">--</div><div class="stat-label">Runs</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-walks">--</div><div class="stat-label">Walks</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-elev">--</div><div class="stat-label">Elevation m</div></div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">RECENT ACTIVITIES <span style="font-size:12px;color:var(--muted);font-family:'Barlow',sans-serif;font-weight:400">· tap for full details</span></div>
+      <div class="tabs">
+        <button class="tab active" onclick="filterActivities('all',this)">All</button>
+        <button class="tab" onclick="filterActivities('Run',this)">🏃 Runs</button>
+        <button class="tab" onclick="filterActivities('Walk',this)">🚶 Walks</button>
+      </div>
+    </div>
+    <div class="activity-list" id="activity-list"></div>
+    <button class="show-more" id="show-more-btn" onclick="showMore()" style="display:none">Show More</button>
+    <div class="ai-box">
+      <div class="ai-hdr"><div class="ai-dot"></div><div class="ai-hdr-title">AI COACHING CHAT · Llama 3.1</div></div>
+      <div class="ai-msgs" id="ai-msgs"></div>
+      <div class="quick-row">
+        <button class="qbtn" onclick="sendMsg(this.textContent)">How's my training load?</button>
+        <button class="qbtn" onclick="sendMsg(this.textContent)">Am I overtraining?</button>
+        <button class="qbtn" onclick="sendMsg(this.textContent)">How can I improve my pace?</button>
+        <button class="qbtn" onclick="sendMsg(this.textContent)">Suggest this week's plan</button>
+        <button class="qbtn" onclick="sendMsg(this.textContent)">How's my consistency?</button>
+        <button class="qbtn" onclick="sendMsg(this.textContent)">What should I focus on as a beginner?</button>
+      </div>
+      <div class="input-row">
+        <input class="ai-inp" id="ai-input" placeholder="Ask your coach anything..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+        <button class="send-btn" id="send-btn" onclick="sendMsg()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-icon" id="m-icon">🏃</div>
+      <div>
+        <div class="modal-title" id="m-title">Activity</div>
+        <div class="modal-date" id="m-date"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const CONFIG = {
+  clientId:     "243895",
+  clientSecret: "3e4a1881ef4a39ec1ccaf87b81f21640aea30e2b",
+  refreshToken: "29a7fe82e4d5c2dd1fc3bc44b28b31c64053806a",
+  groqKey:      "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",
+};
+
+let accessToken="", allActivities=[], athlete={}, shownCount=8, currentFilter="all", chatHistory=[];
+
+const typeIcon=t=>({Run:"🏃",Walk:"🚶",Ride:"🚴",Swim:"🏊",Hike:"🥾",Workout:"💪"}[t]||"⚡");
+function fmt(secs){const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;return h>0?`${h}h ${m}m`:`${m}m ${s}s`;}
+function pace(dist,secs){if(!dist||!secs)return"--";const mpk=secs/60/(dist/1000),m=Math.floor(mpk),s=Math.round((mpk-m)*60);return`${m}:${s.toString().padStart(2,"0")}/km`;}
+function speed(mps){return mps?(mps*3.6).toFixed(1)+" km/h":"--";}
+function fmtDate(iso){return new Date(iso).toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short",year:"numeric"});}
+function fmtTime(iso){return new Date(iso).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});}
+
+async function getAccessToken(){
+  const res=await fetch("https://www.strava.com/oauth/token",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({client_id:CONFIG.clientId,client_secret:CONFIG.clientSecret,refresh_token:CONFIG.refreshToken,grant_type:"refresh_token"})
+  });
+  const data=await res.json();
+  if(!data.access_token) throw new Error("Token refresh failed: "+JSON.stringify(data));
+  return data.access_token;
+}
+
+async function loadData(){
+  document.getElementById("loading-screen").style.display="block";
+  document.getElementById("main-content").style.display="none";
+  document.getElementById("error-screen").style.display="none";
+  document.getElementById("refresh-btn").style.display="none";
+  document.getElementById("conn-badge").style.display="none";
+  try{
+    accessToken=await getAccessToken();
+    const h={Authorization:`Bearer ${accessToken}`};
+    const [athRes,actRes]=await Promise.all([
+      fetch("https://www.strava.com/api/v3/athlete",{headers:h}),
+      fetch("https://www.strava.com/api/v3/athlete/activities?per_page=30",{headers:h})
+    ]);
+    athlete=await athRes.json();
+    allActivities=await actRes.json();
+    if(!athlete.id) throw new Error("Could not load athlete data.");
+    renderStats();renderActivities();initChat();
+    document.getElementById("loading-screen").style.display="none";
+    document.getElementById("main-content").style.display="block";
+    document.getElementById("main-content").classList.add("fade-in");
+    document.getElementById("refresh-btn").style.display="block";
+    document.getElementById("conn-badge").style.display="block";
+    document.getElementById("header-sub").textContent=`${athlete.firstname} ${athlete.lastname} · Nagpur, India`;
+  }catch(e){
+    document.getElementById("loading-screen").style.display="none";
+    document.getElementById("error-screen").style.display="block";
+    document.getElementById("error-msg").textContent=e.message;
+  }
+}
+
+function renderStats(){
+  const runs=allActivities.filter(a=>a.type==="Run"),walks=allActivities.filter(a=>a.type==="Walk");
+  document.getElementById("s-dist").textContent=(allActivities.reduce((s,a)=>s+a.distance,0)/1000).toFixed(1);
+  document.getElementById("s-runs").textContent=runs.length;
+  document.getElementById("s-walks").textContent=walks.length;
+  document.getElementById("s-elev").textContent=Math.round(allActivities.reduce((s,a)=>s+(a.total_elevation_gain||0),0));
+}
+
+function filterActivities(type,btn){
+  currentFilter=type;shownCount=8;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  btn.classList.add("active");renderActivities();
+}
+function showMore(){shownCount+=8;renderActivities();}
+
+function renderActivities(){
+  const filtered=currentFilter==="all"?allActivities:allActivities.filter(a=>a.type===currentFilter);
+  const shown=filtered.slice(0,shownCount);
+  document.getElementById("activity-list").innerHTML=shown.map(a=>`
+    <div class="act-card fade-in" onclick="openActivity(${a.id},'${a.name.replace(/'/g,"\\'")}','${a.type}','${a.start_date_local}')">
+      <div class="act-icon">${typeIcon(a.type)}</div>
+      <div style="min-width:0">
+        <div class="act-name">${a.name}${a.type==="Run"?`<span class="pace-badge">${pace(a.distance,a.moving_time)}</span>`:""}</div>
+        <div class="act-meta">${fmtDate(a.start_date_local)} · ${fmtTime(a.start_date_local)}</div>
+      </div>
+      <div class="act-stats">
+        <div><div class="asv">${(a.distance/1000).toFixed(2)}</div><div class="asl">KM</div></div>
+        <div><div class="asv">${fmt(a.moving_time)}</div><div class="asl">Time</div></div>
+        ${a.total_elevation_gain>0?`<div><div class="asv">${Math.round(a.total_elevation_gain)}</div><div class="asl">Elev m</div></div>`:""}
+      </div>
+    </div>`).join("");
+  document.getElementById("show-more-btn").style.display=filtered.length>shownCount?"block":"none";
+}
+
+async function openActivity(id,name,type,date){
+  document.getElementById("m-icon").textContent=typeIcon(type);
+  document.getElementById("m-title").textContent=name;
+  document.getElementById("m-date").textContent=fmtDate(date)+" · "+fmtTime(date);
+  document.getElementById("modal-body").innerHTML=`<div class="modal-loading"><span class="spinner"></span>Loading full details...</div>`;
+  document.getElementById("modal").style.display="flex";
+  try{
+    const res=await fetch(`https://www.strava.com/api/v3/activities/${id}`,{headers:{Authorization:`Bearer ${accessToken}`}});
+    renderActivityDetail(await res.json());
+  }catch(e){document.getElementById("modal-body").innerHTML=`<p style="color:#e07070">Failed to load: ${e.message}</p>`;}
+}
+function closeModal(e){if(e.target.id==="modal")document.getElementById("modal").style.display="none";}
+
+function renderActivityDetail(a){
+  let splitsHTML="";
+  if(a.splits_metric&&a.splits_metric.length>0){
+    const maxTime=Math.max(...a.splits_metric.map(s=>s.moving_time));
+    splitsHTML=`<div class="splits-title" style="margin-top:20px">KM SPLITS</div>
+      <table class="splits-table"><thead><tr>
+        <th>KM</th><th>Pace</th><th>Distance</th><th>Elev</th>${a.splits_metric[0].average_heartrate?"<th>HR</th>":""}
+      </tr></thead><tbody>
+      ${a.splits_metric.map((s,i)=>{
+        const bw=Math.round((s.moving_time/maxTime)*100);
+        return`<tr><td><span class="split-num">${i+1}</span></td>
+          <td><div class="pace-bar-wrap"><div class="pace-bar" style="width:${bw}px;max-width:80px"></div><span>${pace(s.distance,s.moving_time)}</span></div></td>
+          <td>${(s.distance/1000).toFixed(2)} km</td>
+          <td>${s.elevation_difference>0?"+":""}${Math.round(s.elevation_difference||0)}m</td>
+          ${s.average_heartrate?`<td>❤️ ${Math.round(s.average_heartrate)}</td>`:""}</tr>`;
+      }).join("")}</tbody></table>`;
+  }
+  let effortsHTML="";
+  if(a.best_efforts&&a.best_efforts.length>0){
+    effortsHTML=`<div class="efforts-section"><div class="splits-title" style="margin-bottom:10px">BEST EFFORTS</div>
+      ${a.best_efforts.map(e=>`<div class="effort-item"><span class="effort-name">${e.name}</span><span class="effort-time">${fmt(e.elapsed_time)}</span></div>`).join("")}
+    </div>`;
+  }
+  document.getElementById("modal-body").innerHTML=`
+    <div class="detail-grid">
+      <div class="detail-card"><div class="detail-val">${(a.distance/1000).toFixed(2)}</div><div class="detail-label">Distance (km)</div></div>
+      <div class="detail-card"><div class="detail-val">${fmt(a.moving_time)}</div><div class="detail-label">Moving Time</div></div>
+      <div class="detail-card"><div class="detail-val">${pace(a.distance,a.moving_time)}</div><div class="detail-label">Avg Pace</div></div>
+      <div class="detail-card"><div class="detail-val">${a.calories?Math.round(a.calories):"--"}</div><div class="detail-label">🔥 Calories</div></div>
+      <div class="detail-card"><div class="detail-val">${Math.round(a.total_elevation_gain||0)}m</div><div class="detail-label">Elevation Gain</div></div>
+      <div class="detail-card"><div class="detail-val">${speed(a.max_speed)}</div><div class="detail-label">Max Speed</div></div>
+      ${a.average_heartrate?`<div class="detail-card"><div class="detail-val">❤️ ${Math.round(a.average_heartrate)}</div><div class="detail-label">Avg Heart Rate</div></div>`:""}
+      ${a.max_heartrate?`<div class="detail-card"><div class="detail-val">❤️ ${Math.round(a.max_heartrate)}</div><div class="detail-label">Max Heart Rate</div></div>`:""}
+      <div class="detail-card"><div class="detail-val">${speed(a.average_speed)}</div><div class="detail-label">Avg Speed</div></div>
+      ${a.suffer_score?`<div class="detail-card"><div class="detail-val">${a.suffer_score}</div><div class="detail-label">Suffer Score</div></div>`:""}
+      ${a.average_cadence?`<div class="detail-card"><div class="detail-val">${Math.round(a.average_cadence*2)}</div><div class="detail-label">Cadence (spm)</div></div>`:""}
+      <div class="detail-card"><div class="detail-val">${fmt(a.elapsed_time)}</div><div class="detail-label">Total Time</div></div>
+    </div>${splitsHTML}${effortsHTML}`;
+}
+
+function initChat(){
+  const runs=allActivities.filter(a=>a.type==="Run"),walks=allActivities.filter(a=>a.type==="Walk");
+  const totalDist=(allActivities.reduce((s,a)=>s+a.distance,0)/1000).toFixed(1);
+  chatHistory=[];
+  document.getElementById("ai-msgs").innerHTML="";
+  renderMsg("assistant",`✅ Hey ${athlete.firstname}! Loaded your latest ${allActivities.length} activities — ${totalDist} km across ${runs.length} runs and ${walks.length} walks. Tap any activity for full details. Ready to coach you! 🎯`);
+}
+
+function renderMsg(role,text){
+  const msgs=document.getElementById("ai-msgs");
+  const div=document.createElement("div");
+  div.className=`msg fade-in${role==="user"?" msg-user":""}`;
+  div.innerHTML=`<div class="avatar">${role==="user"?"👤":"🤖"}</div><div class="bubble">${text.replace(/\n/g,"<br>")}</div>`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+
+function buildSystemPrompt(){
+  const runs=allActivities.filter(a=>a.type==="Run"),walks=allActivities.filter(a=>a.type==="Walk");
+  const totalDist=(allActivities.reduce((s,a)=>s+a.distance,0)/1000).toFixed(1);
+  const totalTime=fmt(allActivities.reduce((s,a)=>s+a.moving_time,0));
+  const totalElev=Math.round(allActivities.reduce((s,a)=>s+(a.total_elevation_gain||0),0));
+  const summary=allActivities.slice(0,20).map(a=>
+    `${a.type} | ${fmtDate(a.start_date_local)} | ${(a.distance/1000).toFixed(2)}km | ${fmt(a.moving_time)} | pace ${pace(a.distance,a.moving_time)} | elev ${Math.round(a.total_elevation_gain||0)}m`
+  ).join("\n");
+  return `You are an expert endurance sports coach for ${athlete.firstname} ${athlete.lastname}, a beginner runner from Nagpur, India.
+Recent ${allActivities.length} activities:\n${summary}
+Totals: ${totalDist}km, ${totalTime}, ${totalElev}m elevation, ${runs.length} runs + ${walks.length} walks.
+Avg run pace: ${pace(runs.reduce((s,a)=>s+a.distance,0),runs.reduce((s,a)=>s+a.moving_time,0))}.
+Be encouraging, practical, beginner-friendly. Keep replies 3-5 sentences unless asked for detail. Address by first name.`;
+}
+
+async function sendMsg(text){
+  const input=document.getElementById("ai-input");
+  const msg=text||input.value.trim();
+  if(!msg)return;
+  input.value="";
+  document.getElementById("send-btn").disabled=true;
+  renderMsg("user",msg);
+  chatHistory.push({role:"user",content:msg});
+  const msgs=document.getElementById("ai-msgs");
+  const thinking=document.createElement("div");
+  thinking.className="msg fade-in";thinking.id="thinking";
+  thinking.innerHTML=`<div class="avatar">🤖</div><div class="bubble"><span class="spinner"></span>Analyzing your training...</div>`;
+  msgs.appendChild(thinking);msgs.scrollTop=msgs.scrollHeight;
+  try{
+    const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":`Bearer ${CONFIG.groqKey}`},
+      body:JSON.stringify({model:"llama-3.1-8b-instant",max_tokens:1000,temperature:0.7,
+        messages:[{role:"system",content:buildSystemPrompt()},...chatHistory]})
+    });
+    const data=await res.json();
+    document.getElementById("thinking")?.remove();
+    if(data.error){
+      renderMsg("assistant","Error: "+(data.error.message||JSON.stringify(data.error)));
+    }else{
+      const reply=data.choices?.[0]?.message?.content||"Sorry, couldn't get a response.";
+      chatHistory.push({role:"assistant",content:reply});
+      renderMsg("assistant",reply);
+    }
+  }catch(e){
+    document.getElementById("thinking")?.remove();
+    renderMsg("assistant","Network error: "+e.message);
+  }
+  document.getElementById("send-btn").disabled=false;
+}
+
+loadData();
+</script>
+</body>
+</html>
